@@ -6,9 +6,9 @@ terraform {
   ## AWS BACKEND
   #############################################################
   # backend "s3" {
-  #   bucket         = "tf_cloud_state" # REPLACE ACTUAL BUCKET NAME
-  #   key            = "03-basics/import-bootstrap/terraform.tfstate"
-  #   region         = "us-east-1"
+  #   bucket         = "tf_cloud_state"        # REPLACE ACTUAL BUCKET NAME
+  #   key            = "import-bootstrap/terraform.tfstate"
+  #   region         = "eu-north-1"
   #   dynamodb_table = "terraform-state-locking"
   #   encrypt        = true
   # }
@@ -25,11 +25,13 @@ provider "aws" {
   region = "eu-north-1"
 }
 
+# S3 Bucket for Terraform State
 resource "aws_s3_bucket" "terraform_state" {
   bucket        = "tf-cloud-state" # REPLACE WITH ACTUAL BUCKET NAME
-  force_destroy = true
+  force_destroy = true             # allows non-empty bucket deletion.
 }
 
+# Enable Versioning on S3 Bucket
 resource "aws_s3_bucket_versioning" "terraform_bucket_versioning" {
   bucket = aws_s3_bucket.terraform_state.id
   versioning_configuration {
@@ -37,6 +39,7 @@ resource "aws_s3_bucket_versioning" "terraform_bucket_versioning" {
   }
 }
 
+# Enable Server-Side Encryption on S3 Bucket
 resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_crypto_conf" {
   bucket = aws_s3_bucket.terraform_state.bucket
   rule {
@@ -46,15 +49,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_c
   }
 }
 
+# DynamoDB Table for State Locking
 resource "aws_dynamodb_table" "terraform_locks" {
   name         = "terraform-state-locking"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
+
   attribute {
     name = "LockID"
     type = "S"
   }
 }
-
-
-
